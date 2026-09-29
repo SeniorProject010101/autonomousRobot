@@ -1,8 +1,8 @@
-# autonomousRobot
+# Autonomous Robot
 
 This is our senior project: an autonomous robot built to take over the repetitive jobs in a warehouse, like moving items from one spot to another, running the same routes over and over, and doing the boring stuff so people don't have to.
 
-We're team **010101010101**, and this repo is where the whole project comes together in one place.
+We're team **010101010101** which stands for 'Hello World', and this repo is where the whole project comes together in one place.
 
 > **Heads up:** we're still early. Plenty here is scaffolding and "hello world" for now, and it'll fill in as we build. Got questions? So do we.
 
