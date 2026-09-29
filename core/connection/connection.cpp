@@ -8,8 +8,5 @@ std::string Connection::connection()
 
     // message that says connection is up comes from connection status
     std::string connectionBase = base.connectionStatus();
-
-    // message that says hello world
-    std::cout << "hello world" << std::endl;
     return connectionBase;
 }

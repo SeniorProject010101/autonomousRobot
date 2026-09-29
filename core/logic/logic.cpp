@@ -4,5 +4,5 @@
 
 std::string Logic::sayLogic()
 {
-    return "Logic";
+    return "Why is logic not logic? :)";
 }
