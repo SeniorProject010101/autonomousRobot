@@ -25,5 +25,6 @@ int main()
     // always say hello world
     std::string nameOfOurTeam = "010101010101";
     std::cout << "Name of our team --> " << nameOfOurTeam << '\n';
+    std::cout << "Hello World" << '\n';
 	return 0;
 }
