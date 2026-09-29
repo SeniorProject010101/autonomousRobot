@@ -20,5 +20,10 @@ int main()
     // logic
     std::string showLogic = logic.sayLogic();
     std::cout << showLogic << '\n';
+
+
+    // always say hello world
+    std::string nameOfOurTeam = "010101010101";
+    std::cout << "Name of our team --> " << nameOfOurTeam << '\n';
 	return 0;
 }
