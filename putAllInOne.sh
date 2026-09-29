@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 
 
+### Tamim Dostyar
+
 #
 #   NOTE -- YO MAKE SURE YOU KEEP THIS IN THE SOURCE ROOT AND DON'T UPDATE ANYTHING IN AUTONOMOUSROBOT FOLDER
 #   SIMPLY RUN THIS TO PUSH IT TO MAIN REPO
 #
+
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
@@ -15,7 +18,6 @@ REPOS=(
     "mobile-app"
     "robot"
     "computer-vision"
-    "core-connection"
 )
 
 if [ ! -d "$MAIN/.git" ]; then
@@ -23,67 +25,54 @@ if [ ! -d "$MAIN/.git" ]; then
     exit 1
 fi
 
+cd "$MAIN"
+
+# subtree refuses to run on a dirty tree, and we don't want to sweep up stray edits
+if [ -n "$(git status --porcelain)" ]; then
+    echo "$MAIN has uncommitted changes, commit or stash them first"
+    exit 1
+fi
+
 echo "Combining repositories into: $MAIN"
 echo
 
-SYNCED=()
 for REPO in "${REPOS[@]}"; do
-    SOURCE="$ROOT/$REPO"
-    DEST="$MAIN/$REPO"
+    URL="$GITHUB_ORG/$REPO.git"
 
-    # Clone the component repo next to the monorepo if it isn't there yet
-    if [ ! -d "$SOURCE/.git" ]; then
-        echo "$REPO not found locally, cloning..."
-        if ! git clone -q "$GITHUB_ORG/$REPO.git" "$SOURCE"; then
-            echo "Could not clone $REPO, skipping"
-            echo
-            continue
-        fi
+    # Use whatever the default branch is on GitHub (some repos are main, some master)
+    BRANCH="$(git ls-remote --symref "$URL" HEAD 2>/dev/null \
+        | awk '/^ref:/ { sub("refs/heads/", "", $2); print $2 }')"
+    if [ -z "$BRANCH" ]; then
+        echo "Could not reach $REPO (or it has no commits), skipping"
+        echo
+        continue
     fi
 
-    echo "Syncing $REPO..."
+    if git log --grep="^git-subtree-dir: $REPO\$" --format=%H -1 | grep -q .; then
+        echo "Pulling $REPO ($BRANCH)..."
+        git subtree pull -q --prefix="$REPO" "$URL" "$BRANCH" \
+            -m "Merge $REPO ($BRANCH) into main repo"
+    else
+        # First time: drop the old file-copy snapshot so subtree can take over the folder
+        if [ -e "$REPO" ]; then
+            echo "Replacing old $REPO snapshot with full history..."
+            git rm -r -q "$REPO"
+            git commit -q -m "Remove $REPO snapshot before importing its history"
+        fi
+        echo "Importing $REPO ($BRANCH) with history..."
+        git subtree add -q --prefix="$REPO" "$URL" "$BRANCH" \
+            -m "Import $REPO ($BRANCH) with full history"
+    fi
 
-    # Start from an empty folder so files removed upstream are removed here too
-    rm -rf "$DEST"
-    mkdir -p "$DEST"
-
-    # Copy the files git knows about (skips .git, build output, anything ignored).
-    # The existence check skips files that are tracked but deleted in the working tree.
-    (
-        cd "$SOURCE"
-        git ls-files -z --cached --others --exclude-standard \
-            | while IFS= read -r -d '' f; do [ -e "$f" ] && printf '%s\0' "$f"; done \
-            | tar --null -T - -cf -
-    ) | tar -xf - -C "$DEST"
-
-    # Never leave a nested repo behind (e.g. a submodule's .git file)
-    find "$DEST" -name .git -prune -exec rm -rf {} +
-
-    SHA="$(git -C "$SOURCE" rev-parse --short HEAD 2>/dev/null || echo "no-commits")"
-    DIRTY=""
-    [ -n "$(git -C "$SOURCE" status --porcelain)" ] && DIRTY=" +uncommitted"
-    SYNCED+=("$REPO @ $SHA$DIRTY")
-
-    echo "$REPO synced ($SHA$DIRTY)"
+    echo "$REPO synced"
     echo
 done
 
-cd "$MAIN"
-git add -A
-
-if git diff --cached --quiet; then
-    echo "Nothing changed, nothing to commit."
+if [ -z "$(git log '@{u}..HEAD' --oneline 2>/dev/null || echo new)" ]; then
+    echo "Nothing changed, nothing to push."
     exit 0
 fi
 
-echo "Changes:"
-git diff --cached --stat | tail -n 20
-echo
-
-MESSAGE="${1:-Sync components $(date '+%Y-%m-%d %H:%M')}"
-BODY="$(printf '%s\n' "${SYNCED[@]}")"
-
-git commit -q -m "$MESSAGE" -m "$BODY"
 echo "Pushing..."
 git push -u origin HEAD
 
