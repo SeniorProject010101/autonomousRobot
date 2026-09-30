@@ -1,0 +1,9 @@
+# Python-side tooling for this React Native (Expo + TypeScript) app.
+#
+# React Native itself is a JavaScript project, so its libraries (react,
+# react-native, expo, typescript, ...) are listed in package.json and are
+# installed by npm. pip cannot install them directly.
+#
+# nodeenv installs Node.js + npm *inside* this Python virtual environment,
+# so nothing needs to be installed globally. See README.md for the full steps.
+nodeenv==1.11.0
