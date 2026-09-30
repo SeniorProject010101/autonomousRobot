@@ -1,0 +1,11 @@
+{
+  "name": "robot-ros",
+  "dockerComposeFile": "../compose.yaml",
+  "service": "ros",
+  "workspaceFolder": "/robot",
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-vscode.cpptools", "ms-vscode.cmake-tools"]
+    }
+  }
+}
